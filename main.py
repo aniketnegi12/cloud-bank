@@ -2,8 +2,8 @@ import pyrebase
 import hashlib
 import time
 from datetime import datetime
-import getpass
 import os
+import sys
 import random
 
 # ------------------- CONFIGURE FIREBASE -------------------
@@ -22,7 +22,25 @@ db = firebase.database()
 
 # ------------------- UTILITIES -------------------
 def clear_screen():
-    os.system("cls" if os.name == "nt" else "clear")
+    """Clear the terminal in a safe way.
+
+    Some cloud terminals or non-interactive environments don't support
+    clearing via system commands. If stdout is not a TTY or the system
+    call fails, fall back to printing a few newlines.
+    """
+    try:
+        # If not a real terminal (e.g., running in a cloud log), avoid system call
+        if not sys.stdout.isatty():
+            print("\n" * 3)
+            return
+        os.system("cls" if os.name == "nt" else "clear")
+    except Exception:
+        # Best-effort fallback
+        try:
+            print("\n" * 3)
+        except Exception:
+            # If printing fails, silently ignore to avoid crashing the app
+            pass
 
 def simple_hash(s):
     return hashlib.sha256(s.encode()).hexdigest()
@@ -44,7 +62,7 @@ def create_account():
         time.sleep(1)
         return
 
-    password = getpass.getpass("Password  : ")
+    password = input("Password  : ")
     phone = input("Phone(10) : ").strip()
     aadhar = input("Aadhar(12): ").strip()
 
@@ -66,7 +84,7 @@ def login():
     clear_screen()
     print("--- LOGIN ---")
     username = input("Username: ").strip()
-    password = getpass.getpass("Password: ")
+    password = input("Password: ")
 
     acc = db.child("accounts").child(username).get().val()
     if not acc:
