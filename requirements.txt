@@ -1,6 +1,4 @@
 firebase-admin==6.5.0
-hashlib
-datetime
 pyrebase4
 requests==2.31.0
 gunicorn
