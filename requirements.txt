@@ -4,5 +4,4 @@ requests==2.31.0
 gunicorn
 setuptools<81
 flask
-hashlib
 time
