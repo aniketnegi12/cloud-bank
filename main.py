@@ -1,208 +1,187 @@
-import pyrebase
-import hashlib
-import time
-from datetime import datetime
-import getpass
 import os
-import random
+import time
+import hashlib
+from datetime import datetime
+import firebase_admin
+from firebase_admin import credentials, firestore
 
-# ------------------- CONFIGURE FIREBASE -------------------
-firebaseConfig = {
-    "apiKey": "AIzaSyBwSlphAGkdUaNWAFrztz3lcuwnyc6FVVE",
-    "authDomain": "bank-management-system-a0944.firebaseapp.com",
-    "databaseURL": "https://bank-management-system-a0944-default-rtdb.firebaseio.com/",
-    "projectId": "bank-management-system-a0944",
-    "storageBucket": "bank-management-system-a0944.appspot.com",
-    "messagingSenderId": "306645069933 ",
-    "appId": "06645069933:web:767a946990cad6e3da4f64"
-}
+# Initialize Firebase
+cred = credentials.Certificate("bank-management-system-a0944-firebase-adminsdk-fbsvc-290ad1ae1a.json")
+firebase_admin.initialize_app(cred)
+db = firestore.client()
 
-firebase = pyrebase.initialize_app(firebaseConfig)
-db = firebase.database()
-
-# ------------------- UTILITIES -------------------
-def clear_screen():
-    os.system("cls" if os.name == "nt" else "clear")
-
-def simple_hash(s):
-    return hashlib.sha256(s.encode()).hexdigest()
-
-def now_str():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-# ------------------- ACCOUNT OPS -------------------
 def create_account():
-    clear_screen()
-    print("--- CREATE ACCOUNT ---")
-    fname = input("First name: ").strip()
-    lname = input("Last name : ").strip()
-    username = input("Username  : ").strip()
-    user_ref = db.child("accounts").child(username).get()
-
-    if user_ref.val():
-        print("❌ Username already exists.")
-        time.sleep(1)
+    user = input("Username: ").strip()
+    if db.collection("accounts").document(user).get().exists:
+        print("Username exists.")
         return
-
-    password = getpass.getpass("Password  : ")
-    phone = input("Phone(10) : ").strip()
-    aadhar = input("Aadhar(12): ").strip()
-
-    data = {
+    fname = input("First name: ").strip()
+    lname = input("Last name: ").strip()
+    password = input("Password: ").strip()
+    phone = input("Phone (10): ").strip()
+    aadhar = input("Aadhar (12): ").strip()
+    pass_hash = hashlib.sha256(password.encode()).hexdigest()
+    db.collection("accounts").document(user).set({
         "fname": fname,
         "lname": lname,
-        "user": username,
-        "pass_hash": simple_hash(password),
+        "pass_hash": pass_hash,
         "phone": phone,
         "aadhar": aadhar,
         "balance": 0.0
-    }
-    db.child("accounts").child(username).set(data)
-    print("✅ Account created successfully!")
-    time.sleep(1)
-
+    })
+    print("Account created.")
 
 def login():
-    clear_screen()
-    print("--- LOGIN ---")
-    username = input("Username: ").strip()
-    password = getpass.getpass("Password: ")
+    user = input("Username: ").strip()
+    password = input("Password: ").strip()
+    doc = db.collection("accounts").document(user).get()
+    if doc.exists and doc.to_dict()["pass_hash"] == hashlib.sha256(password.encode()).hexdigest():
+        return user
+    print("Invalid credentials.")
+    return None
 
-    acc = db.child("accounts").child(username).get().val()
-    if not acc:
-        print("❌ No such user.")
-        time.sleep(1)
-        return None
-
-    if acc["pass_hash"] != simple_hash(password):
-        print("❌ Incorrect password.")
-        time.sleep(1)
-        return None
-
-    print(f"✅ Welcome, {acc['fname']}!")
-    time.sleep(1)
-    return acc
-
-
-# ------------------- TRANSACTIONS -------------------
-def append_txn(username, ttype, amount, other="N/A"):
-    txn_id = f"{int(time.time())}{random.randint(1000,9999)}"
-    txn = {
-        "user": username,
-        "type": ttype,
-        "amount": amount,
-        "other": other,
-        "time": now_str(),
-        "id": txn_id
-    }
-    db.child("transactions").push(txn)
-
-
-def deposit(acc):
+def deposit(user):
     amt = float(input("Amount to deposit: "))
-    acc["balance"] += amt
-    db.child("accounts").child(acc["user"]).update({"balance": acc["balance"]})
-    append_txn(acc["user"], "deposit", amt)
-    print(f"Deposited ₹{amt:.2f}. New balance: ₹{acc['balance']:.2f}")
-    time.sleep(1)
+    ref = db.collection("accounts").document(user)
+    doc = ref.get()
+    if doc.exists:
+        balance = doc.to_dict()["balance"] + amt
+        ref.update({"balance": balance})
+        db.collection("txns").add({
+            "user": user,
+            "type": "deposit",
+            "amount": amt,
+            "other": "N/A",
+            "time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "id": f"{int(time.time())}{os.getpid()}"
+        })
+        print(f"Deposited. New balance: {balance:.2f}")
 
-
-def withdraw(acc):
+def withdraw(user):
     amt = float(input("Amount to withdraw: "))
-    if acc["balance"] < amt:
-        print("❌ Insufficient funds.")
-        return
-    acc["balance"] -= amt
-    db.child("accounts").child(acc["user"]).update({"balance": acc["balance"]})
-    append_txn(acc["user"], "withdraw", amt)
-    print(f"Withdrawn ₹{amt:.2f}. New balance: ₹{acc['balance']:.2f}")
-    time.sleep(1)
+    ref = db.collection("accounts").document(user)
+    doc = ref.get()
+    if doc.exists:
+        balance = doc.to_dict()["balance"]
+        if balance < amt:
+            print("Insufficient funds.")
+            return
+        ref.update({"balance": balance - amt})
+        db.collection("txns").add({
+            "user": user,
+            "type": "withdraw",
+            "amount": amt,
+            "other": "N/A",
+            "time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "id": f"{int(time.time())}{os.getpid()}"
+        })
+        print(f"Withdrawn. New balance: {balance - amt:.2f}")
 
-
-def transfer(acc):
-    to_user = input("Transfer to username: ").strip()
+def transfer(user):
+    to = input("To (username): ").strip()
     amt = float(input("Amount: "))
-
-    receiver = db.child("accounts").child(to_user).get().val()
-    if not receiver:
-        print("❌ Recipient not found.")
+    ref_from = db.collection("accounts").document(user)
+    ref_to = db.collection("accounts").document(to)
+    doc_from = ref_from.get()
+    doc_to = ref_to.get()
+    if not doc_to.exists:
+        print("Recipient not found.")
         return
-    if acc["balance"] < amt:
-        print("❌ Insufficient funds.")
+    balance = doc_from.to_dict()["balance"]
+    if balance < amt:
+        print("Insufficient funds.")
         return
+    ref_from.update({"balance": balance - amt})
+    ref_to.update({"balance": doc_to.to_dict()["balance"] + amt})
+    txn_id = f"{int(time.time())}{os.getpid()}"
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    db.collection("txns").add({
+        "user": user,
+        "type": "transfer_to",
+        "amount": amt,
+        "other": to,
+        "time": timestamp,
+        "id": txn_id
+    })
+    db.collection("txns").add({
+        "user": to,
+        "type": "transfer_from",
+        "amount": amt,
+        "other": user,
+        "time": timestamp,
+        "id": txn_id
+    })
+    print(f"Transferred {amt:.2f} to {to}. New balance: {balance - amt:.2f}")
 
-    # Update balances
-    acc["balance"] -= amt
-    receiver["balance"] += amt
-    db.child("accounts").child(acc["user"]).update({"balance": acc["balance"]})
-    db.child("accounts").child(to_user).update({"balance": receiver["balance"]})
+def history(user):
+    txns = db.collection("txns").where("user", "==", user).stream()
+    print(f"{'S.No':<5} {'ID':<10} {'Type':<13} {'Amount':<8} {'Other':<10} {'Time'}")
+    print("-" * 60)
+    for i, t in enumerate(txns, 1):
+        data = t.to_dict()
+        print(f"{i:<5} {data['id']:<10} {data['type']:<13} {data['amount']:<8.2f} {data['other']:<10} {data['time']}")
 
-    # Record transactions
-    append_txn(acc["user"], "transfer_to", amt, to_user)
-    append_txn(to_user, "transfer_from", amt, acc["user"])
-    print(f"✅ Transferred ₹{amt:.2f} to {to_user}.")
-    time.sleep(1)
+def update_account(user):
+    ref = db.collection("accounts").document(user)
+    doc = ref.get()
+    if doc.exists:
+        acc = doc.to_dict()
+        fname = input(f"First name ({acc['fname']}): ").strip()
+        phone = input(f"Phone ({acc['phone']}): ").strip()
+        updates = {}
+        if fname: updates["fname"] = fname
+        if phone: updates["phone"] = phone
+        if updates:
+            ref.update(updates)
+            print("Updated.")
 
+def delete_account(user):
+    confirm = input("Confirm delete (y/N): ").strip().lower()
+    if confirm == 'y':
+        db.collection("accounts").document(user).delete()
+        print("Deleted.")
+        return True
+    print("Aborted.")
+    return False
 
-def history(username):
-    clear_screen()
-    txns = db.child("transactions").get().val()
-    print(f"{'ID':<15}{'Type':<15}{'Amount':<10}{'Other':<15}{'Time'}")
-    print("-" * 70)
-    if txns:
-        for t in txns.values():
-            if t["user"] == username:
-                print(f"{t['id']:<15}{t['type']:<15}{t['amount']:<10.2f}{t['other']:<15}{t['time']}")
-    else:
-        print("No transactions.")
-    input("\nPress Enter to continue...")
-
-
-# ------------------- MENU -------------------
-def show_menu(acc):
+def show_menu(user):
     while True:
-        clear_screen()
-        print(f"--- Welcome, {acc['user']} ---")
-        print("1) Balance\n2) Deposit\n3) Withdraw\n4) Transfer\n5) History\n6) Logout")
+        print(f"\nLogged in as: {user}")
+        print("1) Balance  2) Deposit  3) Withdraw  4) Transfer")
+        print("5) History  6) Update   7) Delete account  8) Logout")
         ch = input("Choice: ").strip()
         if ch == '1':
-            acc = db.child("accounts").child(acc["user"]).get().val()
-            print(f"Balance: ₹{acc['balance']:.2f}")
-            input("Press Enter...")
+            doc = db.collection("accounts").document(user).get()
+            if doc.exists:
+                print(f"Balance: {doc.to_dict()['balance']:.2f}")
         elif ch == '2':
-            deposit(acc)
+            deposit(user)
         elif ch == '3':
-            withdraw(acc)
+            withdraw(user)
         elif ch == '4':
-            transfer(acc)
+            transfer(user)
         elif ch == '5':
-            history(acc["user"])
+            history(user)
         elif ch == '6':
-            return
+            update_account(user)
+        elif ch == '7':
+            if delete_account(user): break
+        elif ch == '8':
+            break
 
-
-# ------------------- MAIN -------------------
 def main():
     while True:
-        clear_screen()
-        print("--- SIMPLE CLOUD BANK ---")
-        print("1) Create Account")
-        print("2) Login")
-        print("3) Quit")
-        try:
-            choice = input("Choice: ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print("\nExiting.")
-            break
-        if choice == '1':
+        print("\n--- SIMPLE BANK ---")
+        print("1) Create account\n2) Login\n3) Quit")
+        ch = input("Choice: ").strip()
+        if ch == '1':
             create_account()
-        elif choice == '2':
-            acc = login()
-            if acc:
-                show_menu(acc)
-        elif choice == '3':
+        elif ch == '2':
+            user = login()
+            if user:
+                show_menu(user)
+        elif ch == '3':
             break
-
 
 if __name__ == "__main__":
     main()
