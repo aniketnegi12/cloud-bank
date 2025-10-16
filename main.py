@@ -189,7 +189,11 @@ def main():
         print("1) Create Account")
         print("2) Login")
         print("3) Quit")
-        choice = input("Choice: ").strip()
+        try:
+            choice = input("Choice: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nExiting.")
+            break
         if choice == '1':
             create_account()
         elif choice == '2':
