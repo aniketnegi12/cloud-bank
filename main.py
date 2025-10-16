@@ -14,7 +14,7 @@ firebaseConfig = {
     "projectId": "bank-management-system-a0944",
     "storageBucket": "bank-management-system-a0944.appspot.com",
     "messagingSenderId": "306645069933 ",
-    "appId": "06645069933:web:767a946990cad6e3da4f64"
+    "appId": ""
 }
 
 firebase = pyrebase.initialize_app(firebaseConfig)
@@ -202,4 +202,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
