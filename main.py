@@ -1,49 +1,10 @@
-import sys
 import os
-
-# If we're not running inside a virtualenv, try to switch into the project's .venv.
-# This makes running the script with the system Python (e.g. /opt/homebrew/bin/python3)
-# automatically use the project's virtualenv so required packages are available.
-def ensure_venv_and_reexec():
-    # Detect active venv
-    in_venv = (hasattr(sys, 'real_prefix') or getattr(sys, 'base_prefix', None) != getattr(sys, 'prefix', None)
-               or os.environ.get('VIRTUAL_ENV'))
-    if in_venv:
-        return
-
-    project_root = os.path.dirname(os.path.abspath(__file__))
-    venv_python = os.path.join(project_root, '.venv', 'bin', 'python')
-
-    if os.path.exists(venv_python):
-        # Re-exec into .venv Python
-        try:
-            os.execv(venv_python, [venv_python] + sys.argv)
-        except Exception:
-            # If exec fails, let the import raise a clear error below
-            return
-
-    # Don't attempt to auto-create venv here (can fail on some systems).
-    print('\nProject virtualenv not found. Please run:\n')
-    print('  ./run.sh')
-    print('\nor create and activate a virtualenv and install requirements:\n')
-    print('  python3 -m venv .venv')
-    print('  .venv/bin/python -m pip install -r requirements.txt\n')
-    # Exit so we don't continue with missing dependencies
-    sys.exit(1)
-
-
-ensure_venv_and_reexec()
-
-import warnings
-warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API")
-import pyrebase
 import hashlib
-import time
-import json
-from datetime import datetime
-import getpass
-import os
 import random
+import time
+from datetime import datetime
+from flask import Flask, request, jsonify
+import pyrebase
 
 # ------------------- CONFIGURE FIREBASE -------------------
 firebaseConfig = {
@@ -52,7 +13,7 @@ firebaseConfig = {
     "databaseURL": "https://bank-management-system-a0944-default-rtdb.firebaseio.com/",
     "projectId": "bank-management-system-a0944",
     "storageBucket": "bank-management-system-a0944.appspot.com",
-    "messagingSenderId": "306645069933 ",
+    "messagingSenderId": "306645069933",
     "appId": "06645069933:web:767a946990cad6e3da4f64"
 }
 
@@ -60,29 +21,11 @@ firebase = pyrebase.initialize_app(firebaseConfig)
 db = firebase.database()
 
 # ------------------- UTILITIES -------------------
-
-def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
-
 def now_str():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def simple_hash(s):
-    """Simple hash (like djb2 style)."""
-    h = 5381
-    for c in s:
-        h = ((h << 5) + h) + ord(c)
-    return str(h)
-
-def pause(msg="\nPress Enter to continue..."):
-    input(msg)
-
-# ------------------- ACCOUNT OPS -------------------
-def find_account(username):
-    return db.child("accounts").child(username).get().val()
-
-def save_account(acc):
-    db.child("accounts").child(acc["user"]).set(acc)
+    return hashlib.sha256(s.encode()).hexdigest()
 
 def append_txn(username, ttype, amount, other="N/A"):
     txn_id = f"{int(time.time())}{random.randint(1000,9999)}"
@@ -96,23 +39,29 @@ def append_txn(username, ttype, amount, other="N/A"):
     }
     db.child("transactions").push(txn)
 
-# ---------------- Operations ----------------
+# ------------------- FLASK APP -------------------
+app = Flask(__name__)
 
+@app.route("/")
+def home():
+    return jsonify({"message": "✅ Cloud Bank API is running successfully on Render!"})
+
+# --- Create Account ---
+@app.route("/create", methods=["POST"])
 def create_account():
-    clear_screen()
-    print("---- Create Account ----")
-    fname = input("First name : ").strip()
-    lname = input("Last name  : ").strip()
-    user = input("Username   : ").strip()
+    data = request.json
+    user = data.get("username")
+    password = data.get("password")
+    fname = data.get("fname")
+    lname = data.get("lname")
+    phone = data.get("phone")
+    aadhar = data.get("aadhar")
 
-    if find_account(user):
-        print("❌ Username already exists.")
-        pause()
-        return
+    if not all([user, password, fname, lname, phone, aadhar]):
+        return jsonify({"error": "Missing fields"}), 400
 
-    password = getpass.getpass("Password: ")
-    phone = input("Phone(10)  : ").strip()
-    aadhar = input("Aadhar(12) : ").strip()
+    if db.child("accounts").child(user).get().val():
+        return jsonify({"error": "Username already exists"}), 400
 
     acc = {
         "user": user,
@@ -123,171 +72,97 @@ def create_account():
         "aadhar": aadhar,
         "balance": 0.0
     }
+    db.child("accounts").child(user).set(acc)
+    return jsonify({"message": f"Account created for {user}"}), 201
 
-    save_account(acc)
-    print("✅ Account created successfully!")
-    pause()
+# --- Login ---
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.json
+    user = data.get("username")
+    password = data.get("password")
 
-def login_prompt():
-    clear_screen()
-    print("---- Login ----")
-    user = input("Username: ").strip()
-    password = getpass.getpass("Password: ")
-
-    acc = find_account(user)
+    acc = db.child("accounts").child(user).get().val()
     if not acc:
-        print("❌ No such user.")
-        pause()
-        return None
+        return jsonify({"error": "No such user"}), 404
+    if acc["pass_hash"] != simple_hash(password):
+        return jsonify({"error": "Invalid password"}), 403
+    return jsonify({"message": "Login successful", "account": acc}), 200
 
-    if acc["pass_hash"] == simple_hash(password):
-        print("✅ Login successful.")
-        time.sleep(1)
-        return user
-    else:
-        print("❌ Invalid password.")
-        pause()
-        return None
+# --- Deposit ---
+@app.route("/deposit", methods=["POST"])
+def deposit():
+    data = request.json
+    user = data.get("username")
+    amount = float(data.get("amount", 0))
 
-def deposit(username):
-    try:
-        amt = float(input("Amount to deposit: "))
-        if amt <= 0:
-            raise ValueError
-    except ValueError:
-        print("❌ Invalid amount.")
-        time.sleep(1)
-        return
+    acc = db.child("accounts").child(user).get().val()
+    if not acc:
+        return jsonify({"error": "No such user"}), 404
 
-    acc = find_account(username)
-    acc["balance"] += amt
-    db.child("accounts").child(username).update({"balance": acc["balance"]})
-    append_txn(username, "deposit", amt)
-    print(f"✅ Deposited ₹{amt:.2f}. New balance: ₹{acc['balance']:.2f}")
-    time.sleep(1)
+    acc["balance"] += amount
+    db.child("accounts").child(user).update({"balance": acc["balance"]})
+    append_txn(user, "deposit", amount)
+    return jsonify({"message": f"Deposited ₹{amount:.2f}", "balance": acc["balance"]})
 
-def withdraw(username):
-    try:
-        amt = float(input("Amount to withdraw: "))
-        if amt <= 0:
-            raise ValueError
-    except ValueError:
-        print("❌ Invalid amount.")
-        time.sleep(1)
-        return
+# --- Withdraw ---
+@app.route("/withdraw", methods=["POST"])
+def withdraw():
+    data = request.json
+    user = data.get("username")
+    amount = float(data.get("amount", 0))
 
-    acc = find_account(username)
-    if acc["balance"] < amt:
-        print("❌ Insufficient funds.")
-        time.sleep(1)
-        return
+    acc = db.child("accounts").child(user).get().val()
+    if not acc:
+        return jsonify({"error": "No such user"}), 404
+    if acc["balance"] < amount:
+        return jsonify({"error": "Insufficient funds"}), 400
 
-    acc["balance"] -= amt
-    db.child("accounts").child(username).update({"balance": acc["balance"]})
-    append_txn(username, "withdraw", amt)
-    print(f"✅ Withdrawn ₹{amt:.2f}. New balance: ₹{acc['balance']:.2f}")
-    time.sleep(1)
+    acc["balance"] -= amount
+    db.child("accounts").child(user).update({"balance": acc["balance"]})
+    append_txn(user, "withdraw", amount)
+    return jsonify({"message": f"Withdrawn ₹{amount:.2f}", "balance": acc["balance"]})
 
-def transfer(username):
-    to_user = input("Transfer to username: ").strip()
-    try:
-        amt = float(input("Amount: "))
-        if amt <= 0:
-            raise ValueError
-    except ValueError:
-        print("❌ Invalid amount.")
-        time.sleep(1)
-        return
+# --- Transfer ---
+@app.route("/transfer", methods=["POST"])
+def transfer():
+    data = request.json
+    sender = data.get("sender")
+    receiver = data.get("receiver")
+    amount = float(data.get("amount", 0))
 
-    receiver = find_account(to_user)
-    if not receiver:
-        print("❌ Recipient not found.")
-        time.sleep(1)
-        return
+    s_acc = db.child("accounts").child(sender).get().val()
+    r_acc = db.child("accounts").child(receiver).get().val()
 
-    sender = find_account(username)
-    if sender["balance"] < amt:
-        print("❌ Insufficient funds.")
-        time.sleep(1)
-        return
+    if not s_acc or not r_acc:
+        return jsonify({"error": "Invalid sender or receiver"}), 404
+    if s_acc["balance"] < amount:
+        return jsonify({"error": "Insufficient funds"}), 400
 
-    # Update balances
-    sender["balance"] -= amt
-    receiver["balance"] += amt
-    db.child("accounts").child(username).update({"balance": sender["balance"]})
-    db.child("accounts").child(to_user).update({"balance": receiver["balance"]})
+    s_acc["balance"] -= amount
+    r_acc["balance"] += amount
+    db.child("accounts").child(sender).update({"balance": s_acc["balance"]})
+    db.child("accounts").child(receiver).update({"balance": r_acc["balance"]})
 
-    # Record transactions
-    append_txn(username, "transfer_to", amt, to_user)
-    append_txn(to_user, "transfer_from", amt, username)
-    print(f"✅ Transferred ₹{amt:.2f} to {to_user}.")
-    time.sleep(1)
+    append_txn(sender, "transfer_to", amount, receiver)
+    append_txn(receiver, "transfer_from", amount, sender)
+    return jsonify({"message": f"Transferred ₹{amount:.2f} to {receiver}"}), 200
 
+# --- Transaction History ---
+@app.route("/history/<username>")
 def history(username):
-    clear_screen()
     txns = db.child("transactions").get().val()
-    print(f"{'ID':<15}{'Type':<15}{'Amount':<10}{'Other':<15}{'Time'}")
-    print("-" * 70)
-    if txns:
-        for t in txns.values():
-            if t["user"] == username:
-                print(f"{t['id']:<15}{t['type']:<15}{t['amount']:<10.2f}{t['other']:<15}{t['time']}")
-    else:
-        print("No transactions.")
-    input("\nPress Enter to continue...")
+    user_txns = [t for t in txns.values() if t["user"] == username] if txns else []
+    return jsonify({"transactions": user_txns})
 
-def update_account(username):
-    acc = find_account(username)
-    print(f"First name ({acc['fname']}): ", end="")
-    new_fname = input().strip()
-    if new_fname:
-        acc["fname"] = new_fname
-    print(f"Phone ({acc['phone']}): ", end="")
-    new_phone = input().strip()
-    if new_phone:
-        acc["phone"] = new_phone
-    save_account(acc)
-    print("✅ Account updated.")
-    time.sleep(1)
+# --- Account Balance ---
+@app.route("/balance/<username>")
+def balance(username):
+    acc = db.child("accounts").child(username).get().val()
+    if not acc:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({"balance": acc["balance"]})
 
-def delete_account(username):
-    confirm = input("Confirm delete (y/N): ").lower()
-    if confirm != 'y':
-        print("Aborted.")
-        time.sleep(1)
-        return False
-    db.child("accounts").child(username).remove()
-    print("✅ Account deleted.")
-    time.sleep(1)
-    return True
-
-# ---------------- Menu ----------------
-
-def show_menu(user):
-    while True:
-        clear_screen()
-        print(f"Logged in as: {user}\n")
-        print("1) Balance\n2) Deposit\n3) Withdraw\n4) Transfer")
-        print("5) History\n6) Update\n7) Delete account\n8) Logout")
-        ch = input("Choice: ").strip()
-        if ch == '1':
-            acc = find_account(user)
-            print(f"Balance: ₹{acc['balance']:.2f}")
-            pause()
-        elif ch == '2':
-            deposit(user)
-        elif ch == '3':
-            withdraw(user)
-        elif ch == '4':
-            transfer(user)
-        elif ch == '5':
-            history(user)
-        elif ch == '6':
-            update_account(user)
-        elif ch == '7':
-            if delete_account(user):
-                return
-        elif ch == '8':
-            return
-
-# ------------------- MAIN -------------------
+# ------------------- RUN APP -------------------
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
