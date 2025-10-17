@@ -34,6 +34,8 @@ def ensure_venv_and_reexec():
 
 ensure_venv_and_reexec()
 
+import warnings
+warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API")
 import pyrebase
 import hashlib
 import time

@@ -1,4 +1,6 @@
 
+import warnings
+warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API")
 from flask import Flask, jsonify, request
 import main as bank
 
