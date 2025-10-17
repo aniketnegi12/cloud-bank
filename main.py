@@ -1,3 +1,39 @@
+import sys
+import os
+
+# If we're not running inside a virtualenv, try to switch into the project's .venv.
+# This makes running the script with the system Python (e.g. /opt/homebrew/bin/python3)
+# automatically use the project's virtualenv so required packages are available.
+def ensure_venv_and_reexec():
+    # Detect active venv
+    in_venv = (hasattr(sys, 'real_prefix') or getattr(sys, 'base_prefix', None) != getattr(sys, 'prefix', None)
+               or os.environ.get('VIRTUAL_ENV'))
+    if in_venv:
+        return
+
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    venv_python = os.path.join(project_root, '.venv', 'bin', 'python')
+
+    if os.path.exists(venv_python):
+        # Re-exec into .venv Python
+        try:
+            os.execv(venv_python, [venv_python] + sys.argv)
+        except Exception:
+            # If exec fails, let the import raise a clear error below
+            return
+
+    # Don't attempt to auto-create venv here (can fail on some systems).
+    print('\nProject virtualenv not found. Please run:\n')
+    print('  ./run.sh')
+    print('\nor create and activate a virtualenv and install requirements:\n')
+    print('  python3 -m venv .venv')
+    print('  .venv/bin/python -m pip install -r requirements.txt\n')
+    # Exit so we don't continue with missing dependencies
+    sys.exit(1)
+
+
+ensure_venv_and_reexec()
+
 import pyrebase
 import hashlib
 import time
