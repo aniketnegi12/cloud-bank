@@ -291,24 +291,3 @@ def show_menu(user):
             return
 
 # ------------------- MAIN -------------------
-def main():
-    while True:
-        clear_screen()
-        print("--- SIMPLE BANK ---")
-        print("1) Create account")
-        print("2) Login")
-        print("3) Quit")
-        ch = input("Choice: ").strip()
-        if ch == '1':
-            create_account()
-        elif ch == '2':
-            user = login_prompt()
-            if user:
-                show_menu(user)
-        elif ch == '3':
-            print("Exiting...")
-            time.sleep(0.5)
-            break
-
-if __name__ == "__main__":
-    main()
