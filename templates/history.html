@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto bg-gray-900 p-8 rounded shadow-lg border border-green-400">
+    <h2 class="text-3xl font-bold mb-6 neon-text text-center">Transaction History</h2>
+    {% if transactions %}
+        <table class="w-full text-green-200 border border-green-400 rounded">
+            <thead>
+                <tr class="border-b border-green-400">
+                    <th class="p-2 text-left">ID</th>
+                    <th class="p-2 text-left">Type</th>
+                    <th class="p-2 text-left">Amount</th>
+                    <th class="p-2 text-left">Other</th>
+                    <th class="p-2 text-left">Time</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for txn in transactions %}
+                <tr class="border-b border-green-700">
+                    <td class="p-2">{{ txn.id }}</td>
+                    <td class="p-2">{{ txn.type }}</td>
+                    <td class="p-2">₹{{ txn.amount }}</td>
+                    <td class="p-2">{{ txn.other }}</td>
+                    <td class="p-2">{{ txn.time }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-green-400">No transactions found.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
