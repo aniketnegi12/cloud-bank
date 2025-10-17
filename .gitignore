@@ -1,0 +1,36 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+*.db
+
+# --- Virtual environment ---
+.venv/
+env/
+venv/
+
+# --- macOS system files ---
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# --- VS Code / IDE stuff ---
+.vscode/
+.idea/
+
+# --- Bytecode and cache ---
+*.bak
+*.swp
+*.swo
+
+# --- Build / Packaging ---
+build/
+dist/
+*.egg-info/
+
+# --- Secrets (optional, keep safe) ---
+*.env
+firebase_config.json
