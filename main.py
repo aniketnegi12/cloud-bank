@@ -10,13 +10,13 @@ app = Flask(__name__)
 
 # ------------------- CONFIGURE FIREBASE -------------------
 firebaseConfig = {
-    "apiKey": "YOUR_API_KEY",
-    "authDomain": "YOUR_AUTH_DOMAIN",
-    "databaseURL": "YOUR_DATABASE_URL",
-    "projectId": "YOUR_PROJECT_ID",
-    "storageBucket": "YOUR_STORAGE_BUCKET",
-    "messagingSenderId": "YOUR_SENDER_ID",
-    "appId": "YOUR_APP_ID"
+     "apiKey": "AIzaSyBwSlphAGkdUaNWAFrztz3lcuwnyc6FVVE",  # Your Firebase API Key
+    "authDomain": "bank-management-system-a0944.firebaseapp.com",  # Your Auth Domain
+    "databaseURL": "https://bank-management-system-a0944-default-rtdb.firebaseio.com/",  # Full Realtime DB URL
+    "projectId": "bank-management-system-a0944",  # Your Project ID
+    "storageBucket": "bank-management-system-a0944.appspot.com",  # Your Storage Bucket
+    "messagingSenderId": "306645069933",  # Messaging Sender ID
+    "appId": "06645069933:web:767a946990cad6e3da4f64"
 }
 
 firebase = pyrebase.initialize_app(firebaseConfig)
