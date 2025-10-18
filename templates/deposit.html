@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="max-w-md mx-auto bg-gray-900 p-8 rounded shadow-lg border border-green-400">
-    <h2 class="text-3xl font-bold mb-6 neon-text text-center">Deposit</h2>
+    <h2 class="text-3xl font-bold mb-6 neon-text text-center">deposit</h2>
     {% if error %}<p class="text-red-500 mb-4">{{ error }}</p>{% endif %}
     {% if success %}<p class="text-green-400 mb-4">{{ success }}</p>{% endif %}
     <form method="POST" action="/deposit/{{ username }}">
         <label class="block mb-2 text-green-400">Amount</label>
         <input type="number" step="0.01" name="amount" class="w-full border border-green-400 bg-gray-800 text-green-200 p-2 mb-4 rounded">
-        <button type="submit" class="neon-btn w-full py-2 rounded hover:shadow-lg">Deposit</button>
+        <button type="submit" class="neon-btn w-full py-2 rounded hover:shadow-lg">deposit</button>
     </form>
 </div>
 {% endblock %}
