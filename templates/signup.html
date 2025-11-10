@@ -1,21 +1,47 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="max-w-md mx-auto bg-gray-800 p-8 rounded shadow-lg border border-green-400">
-    <h2 class="text-3xl font-bold mb-6 neon-text text-center">Sign Up</h2>
-    <form method="POST" action="/signup">
-        <label class="block mb-2 text-green-400">First Name</label>
-        <input type="text" name="fname" class="w-full border border-green-400 bg-gray-900 text-green-200 p-2 mb-2 rounded">
-        <label class="block mb-2 text-green-400">Last Name</label>
-        <input type="text" name="lname" class="w-full border border-green-400 bg-gray-900 text-green-200 p-2 mb-2 rounded">
-        <label class="block mb-2 text-green-400">Username</label>
-        <input type="text" name="username" class="w-full border border-green-400 bg-gray-900 text-green-200 p-2 mb-2 rounded">
-        <label class="block mb-2 text-green-400">Password</label>
-        <input type="password" name="password" class="w-full border border-green-400 bg-gray-900 text-green-200 p-2 mb-2 rounded">
-        <label class="block mb-2 text-green-400">Phone</label>
-        <input type="text" name="phone" class="w-full border border-green-400 bg-gray-900 text-green-200 p-2 mb-2 rounded">
-        <label class="block mb-2 text-green-400">Aadhar</label>
-        <input type="text" name="aadhar" class="w-full border border-green-400 bg-gray-900 text-green-200 p-2 mb-4 rounded">
-        <button type="submit" class="neon-btn w-full py-2 rounded hover:shadow-lg">Create Account</button>
+<div class="container mx-auto max-w-lg mt-10">
+  <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold mb-4">Create account</h2>
+    {% if error %}
+      <div class="bg-red-500 text-white p-2 rounded mb-4">{{ error }}</div>
+    {% endif %}
+    <form method="POST" action="{{ url_for('signup') }}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-green-400 mb-2">First name</label>
+          <input type="text" name="fname" value="{{ request.form.fname or '' }}" class="form-input w-full p-2 rounded border border-gray-600 bg-gray-700 text-white">
+        </div>
+        <div>
+          <label class="block text-green-400 mb-2">Last name</label>
+          <input type="text" name="lname" value="{{ request.form.lname or '' }}" class="form-input w-full p-2 rounded border border-gray-600 bg-gray-700 text-white">
+        </div>
+      </div>
+
+      <label class="block text-green-400 mb-2">Username</label>
+      <input type="text" name="username" value="{{ request.form.username or '' }}" required class="form-input w-full p-2 rounded border border-gray-600 bg-gray-700 text-white mb-4">
+
+      <label class="block text-green-400 mb-2">Password</label>
+      <input type="password" name="password" required class="form-input w-full p-2 rounded border border-gray-600 bg-gray-700 text-white mb-4">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-green-400 mb-2">Phone</label>
+          <input type="text" name="phone" value="{{ request.form.phone or '' }}" class="form-input w-full p-2 rounded border border-gray-600 bg-gray-700 text-white">
+        </div>
+        <div>
+          <label class="block text-green-400 mb-2">Aadhar</label>
+          <input type="text" name="aadhar" value="{{ request.form.aadhar or '' }}" class="form-input w-full p-2 rounded border border-gray-600 bg-gray-700 text-white">
+        </div>
+      </div>
+
+      <button class="btn primary w-full p-2 rounded bg-green-500 hover:bg-green-600 text-white font-bold" type="submit">Create account</button>
     </form>
+
+    <div class="mt-4 text-center">
+      <span class="text-gray-400">Already have an account?</span>
+      <a class="text-green-400 hover:underline" href="{{ url_for('login') }}">Sign in</a>
+    </div>
+  </div>
 </div>
 {% endblock %}

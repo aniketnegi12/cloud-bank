@@ -1,14 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="max-w-md mx-auto bg-gray-900 p-8 rounded shadow-lg border border-green-400">
-    <h2 class="text-3xl font-bold mb-6 neon-text text-center">Withdraw</h2>
-    {% if error %}<p class="text-red-500 mb-4">{{ error }}</p>{% endif %}
-    {% if success %}<p class="text-green-400 mb-4">{{ success }}</p>{% endif %}
-    <form method="POST" action="/withdraw/{{ username }}">
-        <label class="block mb-2 text-green-400">Amount</label>
-        <input type="number" step="0.01" name="amount" class="w-full border border-green-400 bg-gray-800 text-green-200 p-2 mb-4 rounded">
-        <button type="submit" class="neon-btn w-full py-2 rounded hover:shadow-lg">Withdraw</button>
+<div class="container mx-auto max-w-md mt-10">
+  <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold mb-4">Withdraw Funds</h2>
+    {% if error %}
+      <div class="bg-red-500 text-white p-2 rounded mb-4">{{ error }}</div>
+    {% endif %}
+    {% if success %}
+      <div class="bg-green-500 text-white p-2 rounded mb-4">{{ success }}</div>
+    {% endif %}
+    <form method="POST" action="{{ url_for('withdraw', username=username) }}">
+      <label class="block text-green-400 mb-2">Amount</label>
+      <input type="number" step="0.01" name="amount" class="form-input w-full p-2 rounded border border-gray-600 bg-gray-700 text-white mb-4" required>
+      <button class="btn primary w-full p-2 rounded bg-green-500 hover:bg-green-600 text-white font-bold" type="submit">Withdraw</button>
     </form>
+    <div class="mt-4 text-center">
+      <a class="text-green-400 hover:underline" href="{{ url_for('dashboard', username=username) }}">Back to Dashboard</a>
+    </div>
+  </div>
 </div>
 {% endblock %}
 

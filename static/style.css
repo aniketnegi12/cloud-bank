@@ -1,6 +1,6 @@
-/* -------------------- Global Styles -------------------- */
+
 body {
-    background-color: #FFF0F5; /* lavender blush */
+    background-color: #c1fbd1; /* lavender blush */
     font-family: 'Helvetica', sans-serif;
     color: #333333; /* dark gray text */
     margin: 0;
@@ -8,7 +8,8 @@ body {
 }
 
 a {
-    color: #A8DADC; /* pastel teal links */
+    color: #005457; 
+    font-weight: 500;
     text-decoration: none;
 }
 
@@ -16,83 +17,183 @@ h1, h2, h3, h4 {
     color: #333333;
 }
 
-/* -------------------- Container -------------------- */
+.dashboard-grid h3{
+    color: #d7ffd8;
+}
+.card h4{
+    color: #d7ffd8;
+}
+
+input{
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 10px 0px;;
+}
+
+
 .container {
-    max-width: 900px;
-    margin: 2rem auto;
-    padding: 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
     background-color: #F1FAEE; /* soft cream */
     border-radius: 15px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-/* -------------------- Buttons -------------------- */
-button, .btn {
-    background-color: #A8DADC; /* pastel teal */
-    color: #333333;
-    padding: 0.6rem 1.2rem;
-    border: none;
+
+.site-header {
+    background: #0b1220;
+    color: #dff7e2;
+    padding: 12px 0;
+}
+
+.site-header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #00ff7b;
+    text-decoration: none;
+}
+
+.nav a {
+    color: #cfeee1;
+    margin-left: 16px;
+    text-decoration: none;
+}
+
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.card {
+    background: linear-gradient(180deg, #0f1724 0%, #071018 100%);
+    border: 1px solid rgba(255,255,255,0.04);
+    padding: 18px;
+    border-radius: 10px;
+    color: #d7ffd8;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+}
+
+.balance-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.balance-amount {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-top: 6px;
+    color: #7ef59a;
+}
+
+.actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 8px 12px;
     border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.3s;
+    text-decoration: none;
+    color: #0b1220;
+    background: #cfeee1;
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
-button:hover, .btn:hover {
-    background-color: #FFB6B9; /* soft pink on hover */
-    color: #FFF;
+.btn.primary {
+    background: linear-gradient(90deg, #00c853, #00e676);
+    color: #02120b;
 }
 
-/* -------------------- Forms -------------------- */
-input, select, textarea {
-    width: 100%;
-    padding: 0.6rem;
-    margin: 0.5rem 0 1rem 0;
-    border: 1px solid #A8DADC;
-    border-radius: 8px;
-    background-color: #F1FAEE;
-    color: #333333;
+
+.account-card dl {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 6px 14px;
 }
 
-input:focus, select:focus, textarea:focus {
-    outline: 2px solid #FFB6B9;
+.account-card dt {
+    color: #9debb7;
+    font-size: 0.9rem;
 }
 
-/* -------------------- Tables -------------------- */
-table {
+.account-card dd {
+    margin: 0;
+    color: #dff7e2;
+}
+
+
+.txn-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 1rem;
+    margin-top: 8px;
+    font-size: 0.95rem;
+    color: #dff7e2;
 }
 
-th, td {
-    padding: 0.8rem;
+.txn-table th, .txn-table td {
+    padding: 8px 10px;
     text-align: left;
-    border-bottom: 1px solid #A8DADC;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
 }
 
-th {
-    background-color: #A8DADC;
-    color: #FFF;
+.txn-table thead th {
+    color: #9debb7;
+    font-weight: 700;
 }
 
-tr:nth-child(even) {
-    background-color: #F1FAEE;
+.flashes {
+    margin-bottom: 14px;
 }
 
-/* -------------------- Alerts -------------------- */
-.alert {
-    padding: 0.8rem;
+.flash {
+    padding: 10px 14px;
     border-radius: 8px;
-    margin-bottom: 1rem;
+    margin-bottom: 8px;
+    color: #06120a;
+    font-weight: 600;
 }
 
-.alert-success {
-    background-color: #A8DADC;
-    color: #FFF;
+.flash-success {
+    background: #b8ffd0;
 }
 
-.alert-error {
-    background-color: #FFB6B9;
-    color: #FFF;
+.flash-error {
+    background: #ffb3b3;
+}
+
+.muted {
+    color: rgba(220,255,230,0.6);
+    font-size: 0.95rem;
+}
+
+
+.site-footer {
+    text-align: center;
+    padding: 14px 0;
+    color: #9ccfb5;
+    font-size: 0.9rem;
+    margin-top: 30px;
 }

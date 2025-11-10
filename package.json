@@ -1,0 +1,12 @@
+{
+  "name": "cloud_bank",
+  "version": "1.0.0",
+  "scripts": {
+    "build:css": "tailwindcss -i ./static/styles.css -o ./static/output.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^2.0.0",
+    "postcss": "^8.0.0",
+    "autoprefixer": "^10.0.0"
+  }
+}

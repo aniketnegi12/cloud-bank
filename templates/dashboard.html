@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="max-w-2xl mx-auto bg-gray-900 p-8 rounded shadow-lg border border-green-400">
-    <h2 class="text-3xl font-bold mb-6 neon-text text-center">dashboard</h2>
+    <h2 class="text-3xl font-bold mb-6 neon-text text-center">Dashboard</h2>
     <div class="grid grid-cols-2 gap-4 mb-6">
         <div class="p-4 bg-gray-800 rounded border border-green-400 text-center">
             <p class="text-green-400 font-semibold">Balance</p>
@@ -9,13 +9,59 @@
         </div>
         <div class="p-4 bg-gray-800 rounded border border-green-400 text-center">
             <p class="text-green-400 font-semibold">Transactions</p>
-            <a href="/history" class="text-green-300 hover:text-green-100">view All</a>
+            <!-- <a href="{{ url_for('history', username=username) }}" class="text-green-300 hover:text-green-100">View All</a> -->
         </div>
     </div>
-    <div class="grid grid-cols-3 gap-4">
-        <a href="/deposit" class="neon-btn py-2 rounded text-center">deposit</a>
-        <a href="/withdraw" class="neon-btn py-2 rounded text-center">withdraw</a>
-        <a href="/transfer" class="neon-btn py-2 rounded text-center">transfer</a>
-    </div>
+    <!-- <div class="grid grid-cols-3 gap-4">
+        <a href="{{ url_for('deposit', username=username) }}" class="neon-btn py-2 rounded text-center">deposit</a>
+        <a href="{{ url_for('withdraw', username=username) }}" class="neon-btn py-2 rounded text-center">withdraw</a>
+        <a href="{{ url_for('transfer', username=username) }}" class="neon-btn py-2 rounded text-center">transfer</a>
+    </div> -->
+</div>
+<div class="dashboard-grid">
+    <section class="card balance-card">
+        <h3>Welcome, {{ account.fname }} {{ account.lname }}</h3>
+        <p class="small">Account: <strong>{{ account.user }}</strong></p>
+        <div class="balance-amount">₹{{ "%.2f"|format(account.get('balance', 0.0)) }}</div>
+        <p class="muted">Last updated: {{ account.get('updated_at', '') }}</p>
+        <div class="actions">
+            <a class="btn primary" href="{{ url_for('deposit', username=username) }}">Deposit</a>
+            <a class="btn" href="{{ url_for('withdraw', username=username) }}">Withdraw</a>
+            <a class="btn" href="{{ url_for('transfer', username=username) }}">Transfer</a>
+        </div>
+    </section>
+
+    <section class="card account-card">
+        <h4>Account Details</h4>
+        <dl>
+            <dt>Username</dt><dd>{{ account.user }}</dd>
+            <dt>Phone</dt><dd>{{ account.phone }}</dd>
+            <dt>Aadhar</dt><dd>{{ account.aadhar }}</dd>
+        </dl>
+        <a class="link" href="{{ url_for('history', username=username) }}">View full transaction history</a>
+    </section>
+
+    <section class="card txns-card">
+        <h4>Recent Transactions</h4>
+        {% if transactions %}
+            <table class="txn-table">
+                <thead>
+                    <tr><th>Time</th><th>Type</th><th>Amount</th><th>Other</th></tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions|reverse|slice(0,5) %}
+                        <tr>
+                            <td>{{ t.time }}</td>
+                            <td>{{ t.type }}</td>
+                            <td>₹{{ "%.2f"|format(t.amount) }}</td>
+                            <td>{{ t.other }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="muted">No transactions yet.</p>
+        {% endif %}
+    </section>
 </div>
 {% endblock %}
